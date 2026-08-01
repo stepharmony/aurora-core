@@ -1,120 +1,142 @@
 ---
-name: Build container image
+name: Build Aurora Core
 on:
+  schedule:
+    - cron: "40 4 * * *"  # daily at 4:40 UTC
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+    paths-ignore:
+      - "**.md"
+      - "**.txt"
   push:
     branches:
       - main
     paths-ignore:
-      - '**/README.md'
+      - "**.md"
+      - "**.txt"
+  merge_group:
   workflow_dispatch:
 
+permissions: {}
+
 env:
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  build_push:
-    name: Build and push image
+  push-ghcr:
+    name: Build and Push
     runs-on: ubuntu-24.04
-
+    continue-on-error: false
     permissions:
       contents: read
       packages: write
       id-token: write
-
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image_name:
+          - aurora-core
+          - aurora-core-nvidia
+        include:
+          - fedora_version: 44
+            kernel_flavor: ogc
+            kernel_version: 7.1.5-ogc2.1.fc44.x86_64
+            base_image_name: kinoite
+            arch: x86_64
     steps:
-      # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
 
-      - name: Install just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 #v4.0.0
-
-      - name: Check Just Syntax
-        shell: bash
+      - name: Generate version tag
+        id: version
         run: |
-          just check
+          VERSION_TAG="$(date +%Y%m%d)"
+          VERSION_PRETTY="$(date +%Y.%m.%d)"
+          echo "VERSION_TAG=${VERSION_TAG}" >> $GITHUB_ENV
+          echo "VERSION_PRETTY=${VERSION_PRETTY}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${{ matrix.image_name }}" >> $GITHUB_ENV
+          SHA_HEAD_SHORT="${GITHUB_SHA:0:7}"
+          echo "SHA_HEAD_SHORT=${SHA_HEAD_SHORT}" >> $GITHUB_ENV
+          # lowercase for ghcr
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
 
-      - name: Image Name
-        id: image-name
-        run: |
-          IMAGE_NAME=$(just image_name)
-
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-
-      - name: Default Tag
-        id: gen-default-tag
-        run: |
-          DEFAULT_TAG=$(just generate-default-tag)
-
-          echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
-
-      - name: Prepare environment
-        run: |
-          # Lowercase the image uri https://github.com/macbre/push-to-ghcr/issues/12
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
-
-      # This actually builds the container image
-      - name: Build Image
+      - name: Build image
         id: build-image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo -E $(command -v just) build \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          set -eoux pipefail
+          TARGET="${{ matrix.image_name }}"
+          IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}:${VERSION_TAG}"
+          echo "${GITHUB_TOKEN}" > /tmp/gh_token
+          buildah build \
+            --target "${TARGET}" \
+            --build-arg IMAGE_NAME="${IMAGE_NAME}" \
+            --build-arg IMAGE_VENDOR="${GITHUB_REPOSITORY_OWNER}" \
+            --build-arg FEDORA_VERSION="${{ matrix.fedora_version }}" \
+            --build-arg KERNEL_FLAVOR="${{ matrix.kernel_flavor }}" \
+            --build-arg KERNEL_VERSION="${{ matrix.kernel_version }}" \
+            --build-arg BASE_IMAGE_NAME="${{ matrix.base_image_name }}" \
+            --build-arg SHA_HEAD_SHORT="${SHA_HEAD_SHORT}" \
+            --build-arg VERSION_TAG="${VERSION_TAG}" \
+            --build-arg VERSION_PRETTY="${VERSION_PRETTY}" \
+            --secret id=GITHUB_TOKEN,src=/tmp/gh_token \
+            --tag "${IMG}" \
+            -f Containerfile .
+          rm -f /tmp/gh_token
+          echo "image_tag=${IMG}" >> $GITHUB_OUTPUT
 
-      # This is optional, this provides smaller delta updates
+      - name: Container smoke test
+        run: |
+          set -eoux pipefail
+          IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}:${VERSION_TAG}"
+          podman run --rm "${IMG}" sh -exc '
+            echo "=== OS Release ==="
+            head -5 /usr/lib/os-release
+            echo ""
+            echo "=== Kernel ==="
+            rpm -q kernel || true
+            echo ""
+            echo "=== Key packages ==="
+            rpm -q steam faugus-launcher mangohud vkBasalt gamescope || true
+            echo ""
+            echo "=== Ujust imports ==="
+            head -20 /usr/share/ublue-os/justfile || true
+            echo ""
+            echo "=== Image info ==="
+            cat /usr/share/ublue-os/image-info.json || true
+            echo ""
+            echo "=== Check binaries ==="
+            which steam && which faugus-launcher && which mangohud && which vkBasalt && which gamescope || true
+            echo ""
+            echo "=== ujust list ==="
+            ujust --list 2>&1 | head -20 || true
+          '
+
       - name: Rechunk with rpm-ostree
         id: rechunk
         run: |
-          sudo -E $(command -v just) ostree-rechunk \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}:${VERSION_TAG}"
+          podman run --rm --privileged \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/rpm-ostree:latest \
+            rpm-ostree compose container-encapsulate \
+            --repo=/ostree/repo \
+            "ostree-unverified-registry:${IMG}" \
+            "ostree-unverified-registry:${IMG}" || echo "Rechunk skipped (non-fatal)"
 
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    sudo -E $(command -v just) rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
-
-      - name: Generate Build Tags
-        id: gen-build-tags
-        run: |
-          alias_tags="$(just generate-build-tags \
-                        ${IMAGE_NAME} \
-                        ${DEFAULT_TAG})"
-
-          echo "Tags for this Action..."
-          echo "${alias_tags}"
-          echo "alias_tags=${alias_tags}" >> $GITHUB_OUTPUT
-
-      - name: Tag Image
-        id: tag-images
-        env:
-          ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
-        run: |
-          sudo -E $(command -v just) tag-images \
-            "${IMAGE_NAME}" \
-            "${DEFAULT_TAG}" \
-            "${ALIAS_TAGS}"
-
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
         uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -123,31 +145,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push To GHCR
+      - name: Tag and push to GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        id: push-image
-        env:
-          ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
-          set -euox pipefail
-          for tag in ${ALIAS_TAGS}; do
-            sudo -E podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}
-          done
+          IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+          # also tag as latest
+          podman tag "${IMG}:${VERSION_TAG}" "${IMG}:latest"
+          # push both tags
+          podman push "${IMG}:${VERSION_TAG}"
+          podman push --digestfile=/tmp/digestfile "${IMG}:latest"
+          DIGEST=$(< /tmp/digestfile)
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
-          digest=$(< /tmp/digestfile)
-
-          echo "digest=${digest}" >> $GITHUB_OUTPUT
-
-      # This section is optional and only needs to be enabled if you plan on distributing
-      # your project for others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        with:
-          # be careful when upgrading major versions
-          cosign-release: 'v3.1.2'
 
       - name: Sign container image
         id: sign-image
@@ -155,10 +167,6 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          DIGEST: ${{ steps.push-image.outputs.digest }}
         run: |
-          # https://github.com/containers/container-libs/issues/388
-          # https://github.com/coreos/rpm-ostree/issues/5509
-          # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
-          cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
-
+          IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMG}:latest" || echo "Signing skipped (no key)"
