@@ -185,7 +185,8 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 -y --enable-repo=terra --enable-repo=terra-mesa --setopt=install_weak_deps=False install \
         steam && \
     dnf5 --enable-repo=terra -y install \
-        faugus-launcher && \
+        faugus-launcher \
+        protonplus && \
     /ctx/ghcurl "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks" -Lo /usr/bin/winetricks && \
     chmod +x /usr/bin/winetricks && \
     setfattr -n user.component -v "winetricks" /usr/bin/winetricks && \

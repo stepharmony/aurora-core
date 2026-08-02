@@ -61,17 +61,15 @@ jobs:
       - name: Generate version tag
         id: version
         run: |
-          IMAGE_NAME="${{ matrix.image.name }}"
+          IMAGE_NAME="${{ matrix.image_name }}"
           VERSION_TAG="$(date +%Y%m%d)"
           VERSION_PRETTY="$(date +%Y.%m.%d)"
+          SHA_HEAD_SHORT="${GITHUB_SHA:0:7}"
           echo "VERSION_TAG=${VERSION_TAG}" >> $GITHUB_ENV
           echo "VERSION_PRETTY=${VERSION_PRETTY}" >> $GITHUB_ENV
-          echo "IMAGE_NAME=${{ matrix.image_name }}" >> $GITHUB_ENV
-          SHA_HEAD_SHORT="${GITHUB_SHA:0:7}"
-          echo "SHA_HEAD_SHORT=${SHA_HEAD_SHORT}" >> $GITHUB_ENV
-          # lowercase for ghcr
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> $GITHUB_ENV
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+          echo "SHA_HEAD_SHORT=${SHA_HEAD_SHORT}" >> $GITHUB_ENV
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> $GITHUB_ENV
 
       - name: Build image
         id: build-image
