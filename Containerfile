@@ -16,9 +16,9 @@ COPY build_files /
 # DESKTOP BUILD
 ################
 
-FROM ghcr.io/ublue-os/aurora:stable AS aurora-core
+FROM ghcr.io/ublue-os/aurora:stable AS aether
 
-ARG IMAGE_NAME="${IMAGE_NAME:-aurora-core}"
+ARG IMAGE_NAME="${IMAGE_NAME:-aether}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-custom}"
 ARG IMAGE_BRANCH="${IMAGE_BRANCH:-stable}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
@@ -66,7 +66,7 @@ RUN --mount=type=bind,src=firmware,dst=/ctx/firmware \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     cp -a /ctx/firmware/. /tmp/firmware && \
-    find /tmp/firmware -type f -exec setfattr -n user.component -v "aurora-core-nonfree" {} + && \
+    find /tmp/firmware -type f -exec setfattr -n user.component -v "aether-nonfree" {} + && \
     rm -rf /tmp/firmware/.git && \
     cp -a /tmp/firmware/. / && \
     rm -rf /tmp/firmware
@@ -257,9 +257,9 @@ RUN --mount=type=tmpfs,target=/run --network=none bootc container lint
 # NVIDIA BUILD
 ################
 
-FROM aurora-core AS aurora-core-nvidia
+FROM aether AS aether-nvidia
 
-ARG IMAGE_NAME="${IMAGE_NAME:-aurora-core-nvidia}"
+ARG IMAGE_NAME="${IMAGE_NAME:-aether-nvidia}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-custom}"
 ARG IMAGE_BRANCH="${IMAGE_BRANCH:-stable}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"

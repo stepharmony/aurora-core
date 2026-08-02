@@ -8,12 +8,12 @@ on:
         required: true
         type: string
       image:
-        description: 'Image to promote (aurora-core or aurora-core-nvidia)'
+        description: 'Image to promote (aether or aether-nvidia)'
         required: true
         type: choice
         options:
-          - aurora-core
-          - aurora-core-nvidia
+          - aether
+          - aether-nvidia
           - both
 
 permissions: {}
@@ -38,7 +38,7 @@ jobs:
           
           images="${{ inputs.image }}"
           if [ "$images" = "both" ]; then
-            images="aurora-core aurora-core-nvidia"
+            images="aether aether-nvidia"
           fi
 
           for img in $images; do

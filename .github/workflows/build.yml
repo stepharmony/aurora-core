@@ -1,5 +1,5 @@
 ---
-name: Build Aurora Core
+name: Build Aether
 on:
   schedule:
     - cron: "40 4 * * *"  # daily at 4:40 UTC
@@ -41,8 +41,8 @@ jobs:
       fail-fast: false
       matrix:
         image_name:
-          - aurora-core
-          - aurora-core-nvidia
+          - aether
+          - aether-nvidia
         include:
           - fedora_version: 44
             kernel_flavor: ogc

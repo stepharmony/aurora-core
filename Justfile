@@ -5,13 +5,13 @@ _default:
     @just --list
 
 image_name:
-    @echo "aurora-core"
+    @echo "aether"
 
 generate-default-tag:
     @date +%Y%m%d
 
 # Build desktop image
-build image_name="aurora-core" tag="":
+build image_name="aether" tag="":
     @#!/usr/bin/bash
     tag="${tag:-$(date +%Y%m%d)}"
     buildah build \
@@ -27,7 +27,7 @@ build image_name="aurora-core" tag="":
         -f Containerfile .
 
 # Build NVIDIA image
-build-nvidia image_name="aurora-core-nvidia" tag="":
+build-nvidia image_name="aether-nvidia" tag="":
     @#!/usr/bin/bash
     tag="${tag:-$(date +%Y%m%d)}"
     buildah build \
@@ -46,11 +46,11 @@ build-nvidia image_name="aurora-core-nvidia" tag="":
 build-all tag="":
     @#!/usr/bin/bash
     tag="${tag:-$(date +%Y%m%d)}"
-    just build aurora-core "${tag}"
-    just build-nvidia aurora-core-nvidia "${tag}"
+    just build aether "${tag}"
+    just build-nvidia aether-nvidia "${tag}"
 
 # Run smoke test in container
-smoke-test image_name="aurora-core" tag="latest":
+smoke-test image_name="aether" tag="latest":
     @#!/usr/bin/bash
     podman run --rm "{{ image_name }}:{{ tag }}" sh -exc '
         echo "=== OS Release ===" && head -5 /usr/lib/os-release
@@ -61,5 +61,5 @@ smoke-test image_name="aurora-core" tag="latest":
 
 # Clean images
 clean-images:
-    @buildah images aurora-core --format '{{.ID}}' | xargs -r buildah rmi || true
-    @buildah images aurora-core-nvidia --format '{{.ID}}' | xargs -r buildah rmi || true
+    @buildah images aether --format '{{.ID}}' | xargs -r buildah rmi || true
+    @buildah images aether-nvidia --format '{{.ID}}' | xargs -r buildah rmi || true

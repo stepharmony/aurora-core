@@ -1,4 +1,4 @@
-# Aurora Core
+# Aether
 
 KDE desktop gaming image built on [Aurora](https://github.com/ublue-os/aurora) with:
 
@@ -14,8 +14,8 @@ KDE desktop gaming image built on [Aurora](https://github.com/ublue-os/aurora) w
 
 | Image | Description |
 |-------|-------------|
-| `aurora-core:latest` | KDE desktop gaming |
-| `aurora-core-nvidia:latest` | Same + NVIDIA open driver |
+| `aether:latest` | KDE desktop gaming |
+| `aether-nvidia:latest` | Same + NVIDIA open driver |
 
 ## Usage
 
@@ -23,10 +23,10 @@ Rebase from any Fedora Atomic image:
 
 ```bash
 # Desktop
-rpm-ostree rebase ostree-unverified-registry:ghcr.io/stepharmony/aurora-core:latest
+rpm-ostree rebase ostree-unverified-registry:ghcr.io/stepharmony/aether:latest
 
 # NVIDIA
-rpm-ostree rebase ostree-unverified-registry:ghcr.io/stepharmony/aurora-core-nvidia:latest
+rpm-ostree rebase ostree-unverified-registry:ghcr.io/stepharmony/aether-nvidia:latest
 ```
 
 Rollback: `rpm-ostree rollback`
@@ -35,19 +35,19 @@ Rollback: `rpm-ostree rollback`
 
 ```bash
 # Clone with submodules
-git clone --recurse-submodules https://github.com/stepharmony/aurora-core.git
+git clone --recurse-submodules https://github.com/stepharmony/aether.git
 
 # Build desktop image
-just build aurora-core
+just build aether
 
 # Build NVIDIA image
-just build-nvidia aurora-core-nvidia
+just build-nvidia aether-nvidia
 ```
 
 ## Local testing
 
 ```bash
-just smoke-test aurora-core
+just smoke-test aether
 ```
 
 ## CI
