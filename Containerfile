@@ -54,10 +54,8 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 -y copr enable ublue-os/bazzite-multilib && \
     dnf5 -y config-manager setopt copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib.priority=98 && \
     dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release{,-extras,-mesa} && \
-    sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
     dnf5 -y config-manager setopt "*terra*".priority=1 "*terra*".exclude="nerd-fonts scx-tools scx-scheds python3-protobuf zlib-devel uupd" && \
     dnf5 -y config-manager setopt "terra-mesa".enabled=false && \
-    eval "$(/ctx/dnf5-setopt setopt '*negativo17*' priority=4 exclude='mesa-* *xone*')" && \
     dnf5 -y config-manager setopt "*fedora*".exclude="kernel-core-* kernel-modules-* kernel-uki-virt-*" && \
     /ctx/cleanup
 
@@ -100,8 +98,6 @@ RUN --mount=type=cache,dst=/var/cache \
         mesa-vulkan-drivers && \
     dnf5 --enable-repo=terra-mesa -y install \
         mesa-libOpenCL && \
-    dnf5 -y install \
-        libfreeaptx && \
     /ctx/cleanup
 
 # Remove unneeded packages
@@ -111,12 +107,9 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     dnf5 -y remove \
-        ublue-os-update-services \
         tmux \
         htop \
-        nvtop \
-        firefox \
-        firefox-langpacks && \
+        nvtop && \
     /ctx/cleanup
 
 # Install base packages + scx-scheds
@@ -281,7 +274,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
     dnf5 config-manager unsetopt skip_if_unavailable && \
     dnf5 -y remove \
-        nvidia-gpu-firmware && \
+        nvidia-gpu-firmware 2>/dev/null || true && \
     /ctx/cleanup
 
 # Install NVIDIA driver
@@ -311,7 +304,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     echo "import \"/usr/share/ublue-os/just/95-bazzite-nvidia.just\"" >> /usr/share/ublue-os/justfile && \
-    systemctl disable supergfxd.service && \
+    systemctl disable supergfxd.service 2>/dev/null || true && \
     dnf5 config-manager setopt skip_if_unavailable=1 && \
     if [ -f /etc/modprobe.d/nvidia-modeset.conf ]; then \
       cp /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf \
