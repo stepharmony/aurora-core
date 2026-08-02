@@ -1,4 +1,5 @@
 export project_root := `git rev-parse --show-toplevel`
+kernver := `skopeo list-tags docker://ghcr.io/ublue-os/akmods 2>/dev/null | jq -r '.Tags[]' 2>/dev/null | grep 'ogc-44-.*x86_64' | sort -V | tail -1 | sed 's/ogc-44-//' || echo "7.1.5-ogc2.1.fc44.x86_64"`
 
 _default:
     @just --list
@@ -18,7 +19,7 @@ build image_name="aurora-core" tag="":
         --build-arg IMAGE_NAME="{{ image_name }}" \
         --build-arg FEDORA_VERSION=44 \
         --build-arg KERNEL_FLAVOR=ogc \
-        --build-arg KERNEL_VERSION=7.1.5-ogc2.1.fc44.x86_64 \
+        --build-arg KERNEL_VERSION="{{ kernver }}" \
         --build-arg VERSION_TAG="${tag}" \
         --build-arg VERSION_PRETTY="$(date +%Y.%m.%d)" \
         --tag "{{ image_name }}:${tag}" \
@@ -34,7 +35,7 @@ build-nvidia image_name="aurora-core-nvidia" tag="":
         --build-arg IMAGE_NAME="{{ image_name }}" \
         --build-arg FEDORA_VERSION=44 \
         --build-arg KERNEL_FLAVOR=ogc \
-        --build-arg KERNEL_VERSION=7.1.5-ogc2.1.fc44.x86_64 \
+        --build-arg KERNEL_VERSION="{{ kernver }}" \
         --build-arg VERSION_TAG="${tag}" \
         --build-arg VERSION_PRETTY="$(date +%Y.%m.%d)" \
         --tag "{{ image_name }}:${tag}" \
