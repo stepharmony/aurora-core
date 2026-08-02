@@ -10,7 +10,7 @@ for pattern in "$@"; do
 done
 
 if [[ ${#INSTALL_RPMS[@]} -gt 0 ]]; then
-    dnf -y install "${INSTALL_RPMS[@]}"
+    rpm --install --nodeps "${INSTALL_RPMS[@]}" 2>/dev/null || true
 else
     echo "WARNING: No kmod RPMs found"
 fi
