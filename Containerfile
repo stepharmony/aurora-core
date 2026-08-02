@@ -161,7 +161,7 @@ RUN --mount=type=cache,dst=/var/cache \
         terra-gamescope.x86_64 \
         terra-gamescope-libs.x86_64 \
         terra-gamescope-libs.i686 \
-        umu \
+        umu-launcher \
         umu-wrapper \
         dbus-x11 \
         xrandr \
