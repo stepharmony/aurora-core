@@ -1,0 +1,53 @@
+---
+name: Promote to Stable
+on:
+  workflow_dispatch:
+    inputs:
+      source-tag:
+        description: 'Source tag to promote (e.g. 20260802 or testing)'
+        required: true
+        type: string
+      image:
+        description: 'Image to promote (aurora-core or aurora-core-nvidia)'
+        required: true
+        type: choice
+        options:
+          - aurora-core
+          - aurora-core-nvidia
+          - both
+
+permissions: {}
+
+jobs:
+  retag:
+    name: Retag as stable
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote image(s) to stable
+        run: |
+          REGISTRY="ghcr.io/${{ github.repository_owner }}"
+          
+          images="${{ inputs.image }}"
+          if [ "$images" = "both" ]; then
+            images="aurora-core aurora-core-nvidia"
+          fi
+
+          for img in $images; do
+            IMG="${REGISTRY,,}/${img}"
+            SRC="${IMG}:${{ inputs.source-tag }}"
+            
+            echo "Pulling ${SRC}"
+            podman pull "${SRC}"
+            podman tag "${SRC}" "${IMG}:stable"
+            echo "Pushing ${IMG}:stable"
+            podman push "${IMG}:stable"
+          done

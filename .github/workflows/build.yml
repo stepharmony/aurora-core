@@ -148,11 +148,13 @@ jobs:
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           IMG="${IMAGE_REGISTRY}/${IMAGE_NAME}"
-          # also tag as latest
+          # tag as latest and testing
           podman tag "${IMG}:${VERSION_TAG}" "${IMG}:latest"
-          # push both tags
+          podman tag "${IMG}:${VERSION_TAG}" "${IMG}:testing"
+          # push all tags
           podman push "${IMG}:${VERSION_TAG}"
-          podman push --digestfile=/tmp/digestfile "${IMG}:latest"
+          podman push "${IMG}:latest"
+          podman push --digestfile=/tmp/digestfile "${IMG}:testing"
           DIGEST=$(< /tmp/digestfile)
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 

@@ -157,27 +157,21 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
-    dnf5 --enable-repo=terra --enable-repo=terra-mesa -y install \
+    dnf5 -y swap libfdk-aac fdk-aac-free && \
+    dnf5 --enable-repo=terra --enable-repo=terra-mesa -y --setopt=install_weak_deps=False install \
         terra-gamescope.x86_64 \
         terra-gamescope-libs.x86_64 \
         terra-gamescope-libs.i686 \
         umu-launcher \
         umu-wrapper \
-        dbus-x11 \
-        xrandr \
-        evtest \
-        xdg-user-dirs \
-        xdg-terminal-exec \
         libFAudio.x86_64 \
         libFAudio.i686 \
         vkBasalt.x86_64 \
         vkBasalt.i686 \
         mangohud.x86_64 \
         mangohud.i686 \
-        openxr && \
-    dnf5 -y --enable-repo=terra --enable-repo=terra-mesa --setopt=install_weak_deps=False install \
-        steam && \
-    dnf5 --enable-repo=terra -y install \
+        openxr \
+        steam \
         faugus-launcher \
         protonplus && \
     /ctx/ghcurl "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks" -Lo /usr/bin/winetricks && \
