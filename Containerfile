@@ -53,6 +53,8 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 config-manager setopt keepcache=1 && \
     dnf5 -y copr enable ublue-os/bazzite-multilib && \
     dnf5 -y config-manager setopt copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib.priority=98 && \
+    dnf5 -y copr enable ublue-os/bazzite && \
+    dnf5 -y config-manager setopt copr:copr.fedorainfracloud.org:ublue-os:bazzite.priority=98 && \
     dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release{,-extras,-mesa} && \
     dnf5 -y config-manager setopt "*terra*".priority=1 "*terra*".exclude="nerd-fonts scx-tools scx-scheds python3-protobuf zlib-devel uupd" && \
     dnf5 -y config-manager setopt "terra-mesa".enabled=false && \
@@ -79,6 +81,7 @@ RUN --mount=type=cache,dst=/var/cache \
         mesa-va-drivers && \
     declare -A toswap=( \
         ["copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib"]="bluez xorg-x11-server-Xwayland" \
+        ["copr:copr.fedorainfracloud.org:ublue-os:bazzite"]="wireplumber" \
         ["terra-mesa"]="mesa-filesystem" \
     ) && \
     for repo in "${!toswap[@]}"; do \
@@ -95,7 +98,9 @@ RUN --mount=type=cache,dst=/var/cache \
         mesa-libEGL \
         mesa-libGL \
         mesa-libgbm \
-        mesa-vulkan-drivers && \
+        mesa-vulkan-drivers \
+        wireplumber \
+        wireplumber-libs && \
     dnf5 --enable-repo=terra-mesa -y install \
         mesa-libOpenCL && \
     /ctx/cleanup
@@ -147,7 +152,9 @@ RUN --mount=type=cache,dst=/var/cache \
         vulkan-low-latency-layer \
         libadwaita \
         qt \
-        lshw && \
+        lshw \
+        pipewire-module-filter-chain-sofa \
+        cosign && \
     /ctx/cleanup
 
 # Install Steam + Faugus Launcher + gaming packages
