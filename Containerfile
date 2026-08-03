@@ -153,7 +153,8 @@ RUN --mount=type=cache,dst=/var/cache \
         libadwaita \
         qt \
         lshw \
-        pipewire-module-filter-chain-sofa && \
+        pipewire-module-filter-chain-sofa \
+        plasma-oxygen && \
     /ctx/cleanup
 
 # Install Steam + Faugus Launcher + gaming packages
