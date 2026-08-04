@@ -154,7 +154,13 @@ RUN --mount=type=cache,dst=/var/cache \
         qt \
         lshw \
         pipewire-module-filter-chain-sofa \
-        plasma-oxygen && \
+        plasma-oxygen \
+        unrar \
+        fuse-libs \
+        gum \
+        xwininfo \
+        python3-icoextract \
+        qalculate-qt && \
     /ctx/cleanup
 
 # Install Steam + Faugus Launcher + gaming packages
@@ -180,7 +186,10 @@ RUN --mount=type=cache,dst=/var/cache \
         openxr \
         steam \
         faugus-launcher \
-        protonplus && \
+        protonplus \
+        obs-studio-plugin-vkcapture.x86_64 \
+        obs-studio-plugin-vkcapture-hook-libs.x86_64 \
+        obs-studio-plugin-vkcapture-hook-libs.i686 && \
     /ctx/ghcurl "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks" -Lo /usr/bin/winetricks && \
     chmod +x /usr/bin/winetricks && \
     setfattr -n user.component -v "winetricks" /usr/bin/winetricks && \
@@ -208,7 +217,13 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 -y install \
         kdeconnectd \
         kdeplasma-addons \
-        kgamma && \
+        kgamma \
+        oxygen-icon-theme && \
+    dnf5 -y install --enable-repo=copr:copr.fedorainfracloud.org:ublue-os:packages \
+        ublue-os-media-automount-udev && \
+    systemctl enable ublue-os-media-automount.service 2>/dev/null || true && \
+    cp --no-dereference --preserve=links /usr/lib64/libdrm.so.2 /usr/lib64/libdrm.so && \
+    cp --no-dereference --preserve=links /usr/lib/libdrm.so.2 /usr/lib/libdrm.so && \
     sed -i 's@/usr/bin/steam@/usr/bin/steam@g' /usr/share/applications/steam.desktop && \
     mkdir -p /etc/skel/.config/autostart/ && \
     cp "/usr/share/applications/steam.desktop" "/etc/skel/.config/autostart/steam.desktop" && \
