@@ -115,23 +115,31 @@ jobs:
             echo "=== OS Release ==="
             head -5 /usr/lib/os-release
             echo ""
-            echo "=== Kernel ==="
-            rpm -q kernel || true
+            echo "=== OGC kernel check ==="
+            rpm -q kernel | grep -q ogc || (echo "ERROR: OGC kernel not installed" && exit 1)
+            echo "OK: OGC kernel detected"
             echo ""
             echo "=== Key packages ==="
-            rpm -q steam faugus-launcher mangohud vkBasalt gamescope || true
+            rpm -q steam faugus-launcher mangohud gamescope protonplus plasma-oxygen oxygen-icon-theme
             echo ""
-            echo "=== Ujust imports ==="
-            head -20 /usr/share/ublue-os/justfile || true
+            echo "=== NVIDIA driver ==="
+            rpm -q kmod-nvidia 2>/dev/null && echo "NVIDIA driver: OK" || echo "(not NVIDIA flavor — ok)"
+            echo ""
+            echo "=== Audio realtime configs ==="
+            test -f /etc/security/limits.d/memlock.conf || (echo "ERROR: memlock.conf missing" && exit 1)
+            test -f /etc/security/limits.d/95-realtime-audio.conf || (echo "ERROR: 95-realtime-audio.conf missing" && exit 1)
+            echo "OK: audio realtime configs present"
+            echo ""
+            echo "=== libdrm compat symlink ==="
+            test -L /usr/lib64/libdrm.so || (echo "ERROR: libdrm compat symlink missing" && exit 1)
+            echo "OK: libdrm symlink present"
+            echo ""
+            echo "=== Clean slate — no Bazzite ujust recipes ==="
+            test ! -f /usr/share/ublue-os/just/80-bazzite.just || (echo "ERROR: stale Bazzite recipes present" && exit 1)
+            echo "OK: no Bazzite ujust recipes"
             echo ""
             echo "=== Image info ==="
             cat /usr/share/ublue-os/image-info.json || true
-            echo ""
-            echo "=== Check binaries ==="
-            which steam && which faugus-launcher && which mangohud && which vkBasalt && which gamescope || true
-            echo ""
-            echo "=== ujust list ==="
-            ujust --list 2>&1 | head -20 || true
           '
 
       - name: Rechunk with rpm-ostree
