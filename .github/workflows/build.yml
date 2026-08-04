@@ -120,7 +120,7 @@ jobs:
             echo "OK: OGC kernel detected"
             echo ""
             echo "=== Key packages ==="
-            rpm -q steam faugus-launcher mangohud gamescope protonplus plasma-oxygen oxygen-icon-theme
+            rpm -q steam faugus-launcher mangohud terra-gamescope protonplus plasma-oxygen oxygen-icon-theme
             echo ""
             echo "=== NVIDIA driver ==="
             rpm -q kmod-nvidia 2>/dev/null && echo "NVIDIA driver: OK" || echo "(not NVIDIA flavor — ok)"

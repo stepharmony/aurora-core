@@ -262,7 +262,7 @@ ARG VERSION_TAG="${VERSION_TAG}"
 ARG VERSION_PRETTY="${VERSION_PRETTY}"
 
 # Fetch NVIDIA driver + system files
-COPY system_files/nvidia/shared /
+# NVIDIA stage — no separate system_files needed
 
 # Remove packages that conflict with NVIDIA
 RUN --mount=type=cache,dst=/var/cache \
