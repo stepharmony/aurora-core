@@ -224,10 +224,11 @@ RUN --mount=type=cache,dst=/var/cache \
     systemctl enable ublue-os-media-automount.service 2>/dev/null || true && \
     cp --no-dereference --preserve=links /usr/lib64/libdrm.so.2 /usr/lib64/libdrm.so && \
     cp --no-dereference --preserve=links /usr/lib/libdrm.so.2 /usr/lib/libdrm.so && \
-    sed -i 's@/usr/bin/steam@/usr/bin/steam@g' /usr/share/applications/steam.desktop && \
+    sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop && \
     mkdir -p /etc/skel/.config/autostart/ && \
     cp "/usr/share/applications/steam.desktop" "/etc/skel/.config/autostart/steam.desktop" && \
-    sed -i 's@/usr/bin/steam %U@/usr/bin/steam -silent %U@g' /etc/skel/.config/autostart/steam.desktop && \
+    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam --disable-firstrun -silent %U@g' /etc/skel/.config/autostart/steam.desktop && \
+    sed -i '$r /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/aether-pins.js' /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/nvtop.desktop 2>/dev/null || true && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/btop.desktop && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/yad-icon-browser.desktop && \
